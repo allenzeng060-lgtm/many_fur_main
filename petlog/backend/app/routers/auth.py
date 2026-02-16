@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 from datetime import datetime, timedelta
 from typing import Annotated
 
@@ -21,8 +25,7 @@ import hashlib
 # ---------------------------
 # Config
 # ---------------------------
-# 在真實專案中， SECRET_KEY 應該從 env讀取
-SECRET_KEY = "CHANGE_THIS_TO_A_SUPER_SECRET_KEY"
+SECRET_KEY = os.getenv("SECRET_KEY", "CHANGE_THIS_TO_A_SUPER_SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30 * 24 * 60  # 30 days for app
 

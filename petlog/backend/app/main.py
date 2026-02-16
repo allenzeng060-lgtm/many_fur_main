@@ -5,6 +5,8 @@ import shutil
 import os
 from typing import Annotated
 from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Header, UploadFile, File
 from fastapi.responses import JSONResponse
@@ -39,9 +41,12 @@ app = FastAPI(title="PetLog API (PostgreSQL)", version="0.1.0")
 
 from fastapi.middleware.cors import CORSMiddleware
 
+# CORS - read from environment variable, default to common dev origins
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:8081,http://localhost:19000,exp://localhost:8081").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

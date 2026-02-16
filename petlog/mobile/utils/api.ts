@@ -1,12 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 import { authEvents } from './auth-events';
-
-// Use localhost for iOS simulator, or local IP for real device
-// You might need to change this if testing on device
-// 優先使用環境變數，否則使用 localhost
-// 暫時改成開發機 LAN IP (若已在 .env 設定 EXPO_PUBLIC_API_URL 則以該值為主)
-export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.0.28:8000';
+import { API_URL } from '../app/config';
 
 export const api = {
     async get(endpoint: string) {
