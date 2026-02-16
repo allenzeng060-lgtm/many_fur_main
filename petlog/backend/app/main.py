@@ -42,7 +42,12 @@ app = FastAPI(title="PetLog API (PostgreSQL)", version="0.1.0")
 from fastapi.middleware.cors import CORSMiddleware
 
 # CORS - read from environment variable, default to common dev origins
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:8081,http://localhost:19000,exp://localhost:8081").split(",")
+# For development, also allow localhost with any port
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:8081,http://localhost:19000,http://localhost:3000,exp://localhost:8081,http://127.0.0.1:8081").split(",")
+
+# Add wildcard for development if needed
+if os.getenv("DEV_MODE") == "true":
+    ALLOWED_ORIGINS.append("*")
 
 app.add_middleware(
     CORSMiddleware,
