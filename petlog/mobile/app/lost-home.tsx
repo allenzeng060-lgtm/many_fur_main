@@ -4,9 +4,8 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import React from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
+import { API_URL } from '@/constants/config';
 
-// Replace with your local IP - using LAN IP for iOS Simulator
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 const { width, height } = Dimensions.get('window');
 const CARD_WIDTH = width - 40;
 const CARD_HEIGHT = height * 0.7;

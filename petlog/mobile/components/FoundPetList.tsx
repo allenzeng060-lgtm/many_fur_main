@@ -3,7 +3,7 @@ import { View, Text, FlatList, StyleSheet, Pressable, Image, ActivityIndicator, 
 import { useRouter, useFocusEffect } from 'expo-router';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import React from 'react';
-import { API_URL } from '@/app/config';
+import { API_URL } from '@/constants/config';
 
 const REGIONS = ["北部", "中部", "南部", "東部", "離島"];
 

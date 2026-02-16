@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 import { authEvents } from './auth-events';
-import { API_URL } from '../app/config';
+import { API_URL } from '../constants/config';
+export { API_URL };
 
 export const api = {
     async get(endpoint: string) {

@@ -24,7 +24,7 @@ import * as Sharing from 'expo-sharing';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { API_URL } from '@/app/config';
+import { API_URL } from '@/constants/config';
 
 type Pet = {
   id: number;

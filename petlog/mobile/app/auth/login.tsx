@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-import { API_URL } from '../config';
+import { API_URL } from '@/constants/config';
 
 export default function LoginScreen() {
     const router = useRouter();

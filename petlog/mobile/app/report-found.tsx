@@ -4,7 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Added
-import { API_URL } from './config';
+import { API_URL } from '@/constants/config';
 import { getRegionFromCity } from '@/utils/regionMapping';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 

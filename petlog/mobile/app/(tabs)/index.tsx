@@ -21,21 +21,9 @@ import { Ionicons } from '@expo/vector-icons';
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { api, API_URL } from "../../utils/api";
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Notifications from 'expo-notifications';
-import { registerForPushNotificationsAsync, scheduleLocalNotification } from "../../utils/notifications";
+import { configureNotificationHandler, registerForPushNotificationsAsync, scheduleLocalNotification } from "../../utils/notifications";
 
 const { width } = Dimensions.get('window');
-
-// Notification Handler Setup
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
 
 type Pet = {
   id: number;
@@ -147,6 +135,7 @@ export default function HomeScreen() {
   }, [loadData]);
 
   useEffect(() => {
+    configureNotificationHandler();
     loadData();
     registerForPushNotificationsAsync();
   }, [loadData]);

@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SWIPE_THRESHOLD = 120;
 
-import { API_URL } from './config';
+import { API_URL } from '@/constants/config';
 
 type MatchResult = {
     report: {

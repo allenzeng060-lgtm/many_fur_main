@@ -2,7 +2,7 @@ import React, { useState, useCallback } from "react";
 import { View, Text, StyleSheet, FlatList, Image, Pressable, SafeAreaView, Platform, ActivityIndicator, Alert, Animated } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { API_URL } from "@/app/config";
+import { API_URL } from "@/constants/config";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { Swipeable, RectButton } from 'react-native-gesture-handler';

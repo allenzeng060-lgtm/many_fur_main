@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Image, StyleSheet, ActivityIndicator, Alert, Pressable, TextInput, KeyboardAvoidingView, Platform, Linking, Dimensions, Switch } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { API_URL } from './config';
+import { API_URL } from '@/constants/config';
 import { CURRENT_USER_ID as GLOBAL_USER_ID } from '@/constants/User'; // Added
 
 export default function ReportDetailScreen() {

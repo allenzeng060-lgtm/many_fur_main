@@ -1,8 +1,37 @@
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
+type NotificationsModule = typeof import('expo-notifications');
+
+function getNotificationsModule(): NotificationsModule | null {
+    if (Platform.OS === 'web') {
+        return null;
+    }
+    try {
+        return require('expo-notifications') as NotificationsModule;
+    } catch (error) {
+        console.warn('expo-notifications is unavailable:', error);
+        return null;
+    }
+}
+
+export function configureNotificationHandler() {
+    const Notifications = getNotificationsModule();
+    if (!Notifications) return;
+
+    Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+            shouldShowAlert: true,
+            shouldPlaySound: true,
+            shouldSetBadge: false,
+            shouldShowBanner: true,
+            shouldShowList: true,
+        }),
+    });
+}
+
 export async function registerForPushNotificationsAsync() {
-    let token;
+    const Notifications = getNotificationsModule();
+    if (!Notifications) return;
 
     if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('default', {
@@ -30,6 +59,9 @@ export async function registerForPushNotificationsAsync() {
 }
 
 export async function scheduleLocalNotification(title: string, body: string, seconds: number = 1) {
+    const Notifications = getNotificationsModule();
+    if (!Notifications) return;
+
     await Notifications.scheduleNotificationAsync({
         content: {
             title,

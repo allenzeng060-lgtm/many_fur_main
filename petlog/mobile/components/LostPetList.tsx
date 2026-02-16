@@ -3,7 +3,7 @@ import { View, Text, FlatList, StyleSheet, Pressable, Image, ActivityIndicator, 
 import { useRouter, useFocusEffect } from 'expo-router';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import React from 'react';
-import { API_URL } from '@/app/config';
+import { API_URL } from '@/constants/config';
 import { CURRENT_USER_ID } from '@/constants/User';
 import { Ionicons } from '@expo/vector-icons';
 
