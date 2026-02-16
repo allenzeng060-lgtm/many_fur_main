@@ -1,6 +1,7 @@
 # ===== OS / Editor =====
 .DS_Store
 Thumbs.db
+__MACOSX/
 .vscode/
 .idea/
 
@@ -29,6 +30,12 @@ coverage/
 .expo-shared/
 .cache/
 .parcel-cache/
+
+# ===== Mobile (iOS/Android) =====
+Pods/
+
+# ===== Git (local backups) =====
+.git_backup/
 
 # ===== Python / Backend =====
 __pycache__/

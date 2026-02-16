@@ -1,0 +1,159 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const KEY_CLIENT_ID = "petlog_client_id";
+
+// ✅ iOS 模擬器：BASE_URL 用 http://127.0.0.1:8000
+// ✅ Android 模擬器：BASE_URL 用 http://10.0.2.2:8000
+export const BASE_URL = "http://127.0.0.1:8000";
+
+// --------------------------
+// Client ID
+// --------------------------
+export function genClientId() {
+  // RFC4122-ish (夠用即可)
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+export async function getClientId() {
+  let cid = await AsyncStorage.getItem(KEY_CLIENT_ID);
+  if (!cid) {
+    cid = genClientId();
+    await AsyncStorage.setItem(KEY_CLIENT_ID, cid);
+  }
+  return cid;
+}
+
+export async function setClientId(cid) {
+  await AsyncStorage.setItem(KEY_CLIENT_ID, String(cid || "").trim());
+}
+
+// --------------------------
+// Taipei ISO time (+08:00)
+// --------------------------
+export function nowIsoTaipei() {
+  const d = new Date();
+  const parts = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  })
+    .formatToParts(d)
+    .reduce((acc, p) => {
+      acc[p.type] = p.value;
+      return acc;
+    }, {});
+
+  const ms = String(d.getMilliseconds()).padStart(3, "0");
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}.${ms}+08:00`;
+}
+
+// --------------------------
+// fetch wrapper (always X-Client-Id)
+// --------------------------
+async function request(path, { method = "GET", body } = {}) {
+  const cid = await getClientId();
+
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method,
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "X-Client-Id": cid,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  const text = await res.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch (e) {
+    data = null;
+  }
+
+  if (!res.ok) {
+    // FastAPI validation detail 轉成好讀字串
+    let msg = "";
+    if (data && data.detail) {
+      if (typeof data.detail === "string") msg = data.detail;
+      else if (Array.isArray(data.detail)) {
+        msg = data.detail
+          .map((it) => {
+            const loc = Array.isArray(it.loc) ? it.loc.join(" -> ") : "";
+            const m = it.msg || "Validation error";
+            return loc ? `${loc}: ${m}` : m;
+          })
+          .join("\n");
+      } else {
+        msg = JSON.stringify(data.detail);
+      }
+    } else if (data && (data.message || data.error)) {
+      msg = data.message || data.error;
+    } else {
+      msg = text || res.statusText;
+    }
+    const err = new Error(`${res.status} ${msg}`);
+    err.status = res.status;
+    err.payload = data;
+    throw err;
+  }
+
+  return data;
+}
+
+// --------------------------
+// API
+// --------------------------
+export const api = {
+  // pets
+  listPets() {
+    return request("/pets");
+  },
+  getPet(id) {
+    return request(`/pets/${id}`);
+  },
+  createPet(payload) {
+    // ✅ species / breed 空字串轉 null，避免後端 422
+    const body = {
+      name: payload?.name,
+      species: payload?.species ? payload.species : null,
+      breed: payload?.breed ? payload.breed : null,
+      // 其它欄位（如果你 UI 有）一律容忍
+      sex: payload?.sex ?? null,
+      birth_date: payload?.birth_date ?? null,
+    };
+    return request("/pets", { method: "POST", body });
+  },
+  deletePet(id) {
+    return request(`/pets/${id}`, { method: "DELETE" });
+  },
+
+  // events
+  listEvents(petId) {
+    return request(`/pets/${petId}/events`);
+  },
+  createEvent(petId, payload) {
+    const body = {
+      ...payload,
+      // ✅ 若沒填時間，強制台北時間
+      happened_at: payload?.happened_at ? payload.happened_at : nowIsoTaipei(),
+      // ✅ value 用字串也行（後端若是 JSON/text 都可吃）
+      value: payload?.value ?? null,
+      title: payload?.title ?? null,
+      note: payload?.note ?? null,
+    };
+    return request(`/pets/${petId}/events`, { method: "POST", body });
+  },
+  deleteEvent(eventId) {
+    return request(`/events/${eventId}`, { method: "DELETE" });
+  },
+};

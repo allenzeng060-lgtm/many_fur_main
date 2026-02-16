@@ -1,0 +1,222 @@
+import React, { useMemo, useState } from "react";
+import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { api } from "../../../src/api";
+const TYPE_LABEL: Record<string, string> = {
+  weight: "體重",
+  vaccine: "疫苗",
+  visit: "看診",
+  med: "用藥",
+  note: "備註",
+};
+
+const TYPES = ["weight", "vaccine", "visit", "med", "note"] as const;
+
+export default function AddEventScreen() {
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const petId = Number(id);
+
+  const [type, setType] = useState<(typeof TYPES)[number]>("weight");
+  const [happenedAt, setHappenedAt] = useState(() => new Date().toISOString().replace("Z", "+08:00"));
+  const [title, setTitle] = useState("");
+  const [value, setValue] = useState("");
+  const [note, setNote] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const happenedAtHint = useMemo(() => "例如：2026-02-09T09:50:27.424+08:00", []);
+
+  const setNow = () => {
+    // 台北時間 ISO (+08:00)
+    const d = new Date();
+    const parts = new Intl.DateTimeFormat("sv-SE", {
+      timeZone: "Asia/Taipei",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    })
+      .formatToParts(d)
+      .reduce((acc: any, p) => {
+        acc[p.type] = p.value;
+        return acc;
+      }, {});
+    const ms = String(d.getMilliseconds()).padStart(3, "0");
+    setHappenedAt(`${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}.${ms}+08:00`);
+  };
+
+  const submit = async () => {
+    if (!petId) return;
+
+    setSubmitting(true);
+    try {
+      const payload: any = {
+        type,                       // ✅ 送英文值給後端
+        happened_at: happenedAt,    // ✅ ISO 字串
+        title: title.trim() || null,
+        note: note.trim() || null,
+        value: value.trim() ? { value: value.trim() } : null,
+      };
+
+      await api.post(`/pets/${petId}/events`, payload);
+      Alert.alert("成功", "已新增事件", [{ text: "OK", onPress: () => router.back() }]);
+    } catch (e: any) {
+      Alert.alert("新增失敗", String(e?.message || e));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 28, backgroundColor: "#f7f4ff", flexGrow: 1 }}>
+      <View style={{ marginTop: 12 }}>
+<Pressable
+        onPress={() => router.back()}
+        style={{
+          alignSelf: "flex-start",
+          backgroundColor: "rgba(0,0,0,0.06)",
+          paddingVertical: 8,
+          paddingHorizontal: 14,
+          borderRadius: 999,
+          marginBottom: 14,
+        }}
+      >
+        <Text style={{ fontSize: 16 }}>返回</Text>
+      </Pressable>
+</View>
+
+      <Text style={{ fontSize: 28, fontWeight: "900", marginBottom: 16 }}>新增事件</Text>
+
+      <Text style={{ fontSize: 16, fontWeight: "800", marginBottom: 10 }}>類型</Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
+        {TYPES.map((t) => {
+          const active = t === type;
+          return (
+            <Pressable
+              key={t}
+              onPress={() => setType(t)}
+              style={{
+                paddingVertical: 10,
+                paddingHorizontal: 16,
+                borderRadius: 999,
+                borderWidth: 1,
+                borderColor: active ? "rgba(0,0,0,0.08)" : "rgba(92,62,255,0.18)",
+                backgroundColor: active ? "#1f1f2a" : "#efe9ff",
+              }}
+            >
+              <Text style={{ color: active ? "#fff" : "#2b2b3a", fontWeight: "800" }}>
+                {TYPE_LABEL[t]}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <Text style={{ fontSize: 16, fontWeight: "800", marginBottom: 10 }}>時間（ISO）</Text>
+      <TextInput
+        value={happenedAt}
+        onChangeText={setHappenedAt}
+        placeholder={happenedAtHint}
+        autoCapitalize="none"
+        style={{
+          backgroundColor: "#fff",
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: "rgba(0,0,0,0.08)",
+          paddingVertical: 14,
+          paddingHorizontal: 14,
+          marginBottom: 10,
+          fontSize: 16,
+        }}
+      />
+
+      <Pressable
+        onPress={setNow}
+        style={{
+          alignSelf: "flex-start",
+          backgroundColor: "rgba(0,0,0,0.06)",
+          paddingVertical: 10,
+          paddingHorizontal: 14,
+          borderRadius: 14,
+          marginBottom: 18,
+        }}
+      >
+        <Text style={{ fontWeight: "800" }}>用現在時間</Text>
+      </Pressable>
+
+      <Text style={{ fontSize: 16, fontWeight: "800", marginBottom: 10 }}>標題（可空）</Text>
+      <TextInput
+        value={title}
+        onChangeText={setTitle}
+        placeholder="例如：回診 / 施打疫苗"
+        style={{
+          backgroundColor: "#fff",
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: "rgba(0,0,0,0.08)",
+          paddingVertical: 14,
+          paddingHorizontal: 14,
+          marginBottom: 18,
+          fontSize: 16,
+        }}
+      />
+
+      <Text style={{ fontSize: 16, fontWeight: "800", marginBottom: 10 }}>數值（可空）</Text>
+      <TextInput
+        value={value}
+        onChangeText={setValue}
+        placeholder="例如：4.2（體重）"
+        keyboardType="decimal-pad"
+        style={{
+          backgroundColor: "#fff",
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: "rgba(0,0,0,0.08)",
+          paddingVertical: 14,
+          paddingHorizontal: 14,
+          marginBottom: 18,
+          fontSize: 16,
+        }}
+      />
+
+      <Text style={{ fontSize: 16, fontWeight: "800", marginBottom: 10 }}>備註（可空）</Text>
+      <TextInput
+        value={note}
+        onChangeText={setNote}
+        placeholder="例如：精神很好、食慾正常…"
+        multiline
+        style={{
+          backgroundColor: "#fff",
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: "rgba(0,0,0,0.08)",
+          paddingVertical: 14,
+          paddingHorizontal: 14,
+          minHeight: 120,
+          textAlignVertical: "top",
+          marginBottom: 22,
+          fontSize: 16,
+        }}
+      />
+
+      <Pressable
+        onPress={submit}
+        disabled={submitting}
+        style={{
+          backgroundColor: "#1f1f2a",
+          borderRadius: 18,
+          paddingVertical: 18,
+          alignItems: "center",
+          opacity: submitting ? 0.6 : 1,
+        }}
+      >
+        <Text style={{ color: "#fff", fontSize: 18, fontWeight: "900" }}>
+          {submitting ? "送出中…" : "新增事件"}
+        </Text>
+      </Pressable>
+    </ScrollView>
+  );
+}

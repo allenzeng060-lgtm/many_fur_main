@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PetLog 管理頁</title>
+  <style>
+    :root{
+      --bg:#fbfaff;
+      --card:#ffffff;
+      --ink:#1f1f2a;
+      --muted:#6b6b7a;
+      --line:rgba(25,25,45,.08);
+      --soft:#f4efff;
+      --soft2:#fff7fb;
+      --primary:#1f1f2a;
+      --danger:#d7335c;
+      --shadow:0 16px 36px rgba(0,0,0,.06);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans TC",sans-serif;
+      background: radial-gradient(1200px 600px at 20% 0%, #efe9ff 0%, var(--bg) 55%, #fff 100%);
+      margin:0; color:var(--ink);
+    }
+    header{
+      padding:18px 22px;
+      background:linear-gradient(180deg,#f7f2ff, #f4efff);
+      border-bottom:1px solid rgba(98,62,255,.10);
+      position:sticky; top:0; z-index:10;
+      backdrop-filter:saturate(140%) blur(6px);
+    }
+    h1{margin:0;font-size:18px;letter-spacing:.2px}
+    .sub{margin-top:6px;color:var(--muted);font-size:12px}
+
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:16px;
+      display:grid;
+      grid-template-columns:380px 1fr;
+      gap:14px;
+    }
+    @media (max-width: 900px){
+      .wrap{grid-template-columns:1fr}
+      header{position:relative}
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:14px;
+      box-shadow:var(--shadow);
+    }
+
+    .row{display:flex;gap:10px;align-items:center}
+    .between{justify-content:space-between}
+    .title{font-weight:900}
+    .muted{color:var(--muted);font-size:12px}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+    .kicker{font-size:12px;font-weight:900;color:#5a51ff}
+
+    .btn{
+      border:0;border-radius:12px;padding:10px 12px;font-weight:900;cursor:pointer;
+      transition:transform .05s ease, filter .2s ease;
+    }
+    .btn:active{transform:translateY(1px)}
+    .btnPrimary{background:var(--primary);color:#fff}
+    .btnSoft{background:var(--soft);color:#2b2b3a;border:1px solid rgba(98,62,255,.12)}
+    .btnGhost{background:transparent;color:#2b2b3a;border:1px solid var(--line)}
+    .btnDanger{background:#fff2f5;color:var(--danger);border:1px solid rgba(255,105,135,.25)}
+    .btnMini{padding:8px 10px;border-radius:10px;font-size:12px}
+
+    input,select,textarea{
+      width:100%;
+      border-radius:12px;
+      border:1px solid rgba(25,25,45,.10);
+      padding:10px 12px;
+      background:#fff;
+      outline:none;
+    }
+    input:focus,select:focus,textarea:focus{border-color:rgba(98,62,255,.35); box-shadow:0 0 0 4px rgba(98,62,255,.10)}
+    textarea{min-height:96px;resize:vertical}
+
+    .hr{height:1px;background:rgba(25,25,45,.07);margin:12px 0}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .grid3{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:10px}
+    @media (max-width: 900px){
+      .grid2,.grid3{grid-template-columns:1fr}
+    }
+
+    .list{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+    .item{
+      display:flex;gap:10px;align-items:center;
+      padding:12px;border-radius:16px;border:1px solid rgba(25,25,45,.06);background:#fff;
+      box-shadow:0 10px 20px rgba(0,0,0,.03);
+    }
+    .item:hover{filter:brightness(0.99)}
+    .pill{
+      font-size:12px;padding:4px 10px;border-radius:999px;
+      background:var(--soft);
+      border:1px solid rgba(98,62,255,.12);
+      color:#2b2b3a;
+      white-space:nowrap;
+    }
+    .selected{outline:2px solid rgba(98,62,255,.18); background:linear-gradient(180deg,#fff, #fbfaff)}
+    .hintBox{
+      background:linear-gradient(180deg,#fff, var(--soft2));
+      border:1px dashed rgba(255,105,135,.25);
+      padding:10px 12px;
+      border-radius:14px;
+      color:#5a2b3a;
+      font-size:12px;
+    }
+
+    .cidBox{
+      margin-top:10px;
+      background:#fff;
+      border:1px solid rgba(25,25,45,.08);
+      padding:10px 12px;
+      border-radius:14px;
+      display:grid;
+      gap:8px;
+    }
+    .cidRow{display:flex;gap:10px}
+    .cidRow input{flex:1}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PetLog 管理頁（可視化操作）✨</h1>
+    <div class="sub">即時連動 PostgreSQL：新增 / 刪除 / 查詢 都直接打 API（已啟用 X-Client-Id 租戶隔離）</div>
+
+    <div class="cidBox">
+      <div class="row between">
+        <div class="title">Client ID（租戶）</div>
+        <div class="muted">/admin 所有 API 都會自動帶上此 Header：<span class="mono">X-Client-Id</span></div>
+      </div>
+      <div class="cidRow">
+        <input id="clientId" class="mono" placeholder="xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx" />
+        <button class="btn btnSoft btnMini" onclick="regenClientId()">重新產生</button>
+        <button class="btn btnGhost btnMini" onclick="saveClientId()">保存</button>
+      </div>
+      <div id="cidMsg" class="muted"></div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="row between">
+        <div>
+          <div class="kicker">PETS</div>
+          <div class="title">寵物列表</div>
+        </div>
+        <button class="btn btnSoft btnMini" onclick="loadPets()">重新整理</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row between">
+        <div class="title">新增寵物</div>
+        <div class="muted">寫入後會立刻刷新列表</div>
+      </div>
+
+      <div class="hintBox" style="margin-top:10px">
+        小提醒：物種只能是 <b>cat / dog</b> 或留空（後端有驗證）。
+      </div>
+
+      <div style="margin-top:10px; display:grid; gap:10px">
+        <input id="petName" placeholder="名字（必填）例如：布丁 / 奶茶" />
+        <div class="grid2">
+          <select id="petSpecies">
+            <option value="">物種（可選）</option>
+            <option value="cat">🐱 cat</option>
+            <option value="dog">🐶 dog</option>
+          </select>
+          <input id="petBreed" placeholder="品種（可選）例如：英短 / 柴犬" />
+        </div>
+
+        <button class="btn btnPrimary" onclick="createPet()">新增（直寫 PG）</button>
+        <div id="petMsg" class="muted"></div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row between">
+        <div class="title">清單</div>
+        <div class="muted">點選寵物 → 右側管理事件</div>
+      </div>
+
+      <div id="pets" class="list"></div>
+    </div>
+
+    <div class="card">
+      <div class="row between">
+        <div>
+          <div class="kicker">EVENTS</div>
+          <div class="title">事件管理</div>
+          <div id="currentPet" class="muted">請先在左側點選一隻寵物</div>
+        </div>
+        <button class="btn btnSoft btnMini" onclick="loadEvents()">刷新事件</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row between">
+        <div class="title">新增事件</div>
+        <div class="muted">新增成功後會自動刷新事件列表</div>
+      </div>
+
+      <div style="margin-top:10px; display:grid; gap:10px">
+        <div class="grid3">
+          <select id="evType">
+            <option value="weight">體重（weight）</option>
+            <option value="vaccine">疫苗（vaccine）</option>
+            <option value="visit">看診（visit）</option>
+            <option value="med">用藥（med）</option>
+            <option value="note">筆記（note）</option>
+          </select>
+
+          <input id="evAt" class="mono" placeholder="時間（ISO）例如：2026-02-06T03:24:51.017+08:00" />
+
+          <button class="btn btnGhost btnMini" onclick="setNow()">用現在時間</button>
+        </div>
+
+        <input id="evTitle" placeholder="標題（可空）例如：體重 / 疫苗 / 看診" />
+        <div class="grid2">
+          <input id="evValue" placeholder="數值（可空）例如：4.2（體重建議填）" />
+          <input id="evQuickNote" placeholder="快速備註（可空）例如：食慾正常" />
+        </div>
+        <textarea id="evNote" placeholder="備註（可空）例如：今天精神很好、醫生交代…"></textarea>
+
+        <button class="btn btnPrimary" onclick="createEvent()">新增事件（直寫 PG）</button>
+        <div id="evMsg" class="muted"></div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row between">
+        <div class="title">事件列表</div>
+        <div class="muted">依 happened_at 由新到舊</div>
+      </div>
+      <div id="events" class="list"></div>
+    </div>
+  </div>
+
+<script>
+  const state = { petId: null, pets: [] };
+
+  function uuidv4() {
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+      const r = (Math.random() * 16) | 0;
+      const v = c === "x" ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  }
+
+  function nowIsoTaipei() {
+    const d = new Date();
+    const parts = new Intl.DateTimeFormat("sv-SE", {
+      timeZone: "Asia/Taipei",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    })
+      .formatToParts(d)
+      .reduce((acc, p) => {
+        acc[p.type] = p.value;
+        return acc;
+      }, {});
+    const ms = String(d.getMilliseconds()).padStart(3, "0");
+    return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}.${ms}+08:00`;
+  }
+
+  function setNow() {
+    document.getElementById("evAt").value = nowIsoTaipei();
+  }
+
+  function setCidMsg(t) {
+    document.getElementById("cidMsg").textContent = t || "";
+  }
+
+  function loadClientId() {
+    const el = document.getElementById("clientId");
+    const saved = localStorage.getItem("petlog_client_id");
+    if (saved) {
+      el.value = saved;
+    } else {
+      el.value = uuidv4();
+      localStorage.setItem("petlog_client_id", el.value);
+    }
+    setCidMsg("目前使用：" + el.value);
+  }
+
+  function saveClientId() {
+    const el = document.getElementById("clientId");
+    const v = (el.value || "").trim();
+    if (!v) { setCidMsg("❌ Client ID 不能為空"); return; }
+    localStorage.setItem("petlog_client_id", v);
+    setCidMsg("✅ 已保存：" + v);
+    loadPets();
+    loadEvents();
+  }
+
+  function regenClientId() {
+    const el = document.getElementById("clientId");
+    el.value = uuidv4();
+    localStorage.setItem("petlog_client_id", el.value);
+    setCidMsg("✅ 已重新產生並保存：" + el.value);
+    loadPets();
+    loadEvents();
+  }
+
+  function currentClientId() {
+    return (document.getElementById("clientId").value || "").trim();
+  }
+
+  function setMsg(id, text) { document.getElementById(id).textContent = text || ""; }
+
+  function escapeHtml(str) {
+    return String(str ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function formatFastApiDetail(detail) {
+    if (!detail) return "";
+    if (typeof detail === "string") return detail;
+    if (Array.isArray(detail)) {
+      return detail.map(it => {
+        const loc = Array.isArray(it.loc) ? it.loc.join(" -> ") : "";
+        const msg = it.msg || "Validation error";
+        return loc ? `${loc}: ${msg}` : msg;
+      }).join("\n");
+    }
+    if (typeof detail === "object") return JSON.stringify(detail);
+    return String(detail);
+  }
+
+  async function api(path, opts = {}) {
+    const cid = currentClientId();
+    if (!cid) throw new Error("422 header -> X-Client-Id: Field required（請先設定 Client ID）");
+
+    const res = await fetch(path, {
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "X-Client-Id": cid,
+        ...(opts.headers || {}),
+      },
+      ...opts,
+    });
+
+    const text = await res.text();
+    let data = null;
+    try { data = JSON.parse(text); } catch (e) {}
+
+    if (!res.ok) {
+      const detailMsg = data ? formatFastApiDetail(data.detail) : "";
+      const msg = detailMsg || (data && (data.message || data.error)) || text || res.statusText;
+      throw new Error(res.status + " " + msg);
+    }
+    return data ?? text;
+  }
+
+  function renderPets(pets) {
+    const wrap = document.getElementById("pets");
+    if (!pets || pets.length === 0) {
+      wrap.innerHTML = `<div class="muted">目前沒有資料</div>`;
+      return;
+    }
+    wrap.innerHTML = pets.map(p => {
+      const selected = state.petId === p.id ? "selected" : "";
+      const species = p.species ? `<span class="pill">${escapeHtml(p.species)}</span>` : "";
+      const breed = p.breed ? `<span class="pill">${escapeHtml(p.breed)}</span>` : "";
+      return `
+        <div class="item ${selected}" onclick="selectPet(${p.id})">
+          <div style="flex:1; min-width:0">
+            <div class="title">${escapeHtml(p.name)} <span class="muted">#${p.id}</span></div>
+            <div class="row" style="margin-top:6px; flex-wrap:wrap">
+              ${species}${breed}
+            </div>
+          </div>
+          <button class="btn btnDanger btnMini" onclick="event.stopPropagation(); deletePet(${p.id})">刪除</button>
+        </div>
+      `;
+    }).join("");
+  }
+
+  async function loadPets() {
+    setMsg("petMsg", "載入中…");
+    try {
+      const pets = await api("/pets", { method: "GET" });
+      state.pets = pets;
+      renderPets(pets);
+      setMsg("petMsg", "");
+    } catch (e) {
+      setMsg("petMsg", "載入失敗：" + (e?.message || e));
+    }
+  }
+
+  async function createPet() {
+    const name = (document.getElementById("petName").value || "").trim();
+    const species = (document.getElementById("petSpecies").value || "").trim();
+    const breed = (document.getElementById("petBreed").value || "").trim();
+    if (!name) { setMsg("petMsg", "❌ 名字必填"); return; }
+
+    const payload = { name, species: species ? species : null, breed: breed ? breed : null };
+
+    setMsg("petMsg", "新增中…");
+    try {
+      await api("/pets", { method: "POST", body: JSON.stringify(payload) });
+      setMsg("petMsg", "✅ 新增成功");
+      document.getElementById("petName").value = "";
+      document.getElementById("petBreed").value = "";
+      document.getElementById("petSpecies").value = "";
+      await loadPets();
+    } catch (e) {
+      setMsg("petMsg", "新增失敗：" + (e?.message || e));
+    }
+  }
+
+  function selectPet(id) {
+    state.petId = id;
+    const p = state.pets.find(x => x.id === id);
+    document.getElementById("currentPet").textContent = p ? `目前選擇：${p.name} (#${p.id})` : `目前選擇：#${id}`;
+    renderPets(state.pets);
+    loadEvents();
+  }
+
+  async function deletePet(id) {
+    if (!confirm("確定要刪除這隻寵物？")) return;
+    setMsg("petMsg", "刪除中…");
+    try {
+      await api(`/pets/${id}`, { method: "DELETE" });
+      if (state.petId === id) state.petId = null;
+      document.getElementById("currentPet").textContent = "請先在左側點選一隻寵物";
+      setMsg("petMsg", "✅ 已刪除");
+      await loadPets();
+      renderEvents([]);
+    } catch (e) {
+      setMsg("petMsg", "刪除失敗：" + (e?.message || e));
+    }
+  }
+
+  function renderEvents(events) {
+    const wrap = document.getElementById("events");
+    if (!state.petId) { wrap.innerHTML = `<div class="muted">請先選擇寵物</div>`; return; }
+    if (!events || events.length === 0) { wrap.innerHTML = `<div class="muted">目前沒有事件</div>`; return; }
+
+    wrap.innerHTML = events.map(ev => {
+      const at = ev.happened_at ? escapeHtml(ev.happened_at) : "";
+      const title = ev.title ? escapeHtml(ev.title) : "(無標題)";
+      const type = ev.type ? escapeHtml(ev.type) : "";
+      const value = ev.value ? ` · ${escapeHtml(typeof ev.value === "string" ? ev.value : JSON.stringify(ev.value))}` : "";
+      return `
+        <div class="item">
+          <div style="flex:1; min-width:0">
+            <div class="row between">
+              <div class="title">${title}${value}</div>
+              <span class="pill">${type}</span>
+            </div>
+            <div class="muted mono" style="margin-top:6px">${at}</div>
+            ${ev.note ? `<div class="muted" style="margin-top:6px; white-space:pre-wrap">${escapeHtml(ev.note)}</div>` : ""}
+          </div>
+          <button class="btn btnDanger btnMini" onclick="deleteEvent(${ev.id})">刪除</button>
+        </div>
+      `;
+    }).join("");
+  }
+
+  async function loadEvents() {
+    if (!state.petId) { renderEvents([]); return; }
+    setMsg("evMsg", "載入中…");
+    try {
+      const events = await api(`/pets/${state.petId}/events`, { method: "GET" });
+      renderEvents(events);
+      setMsg("evMsg", "");
+    } catch (e) {
+      setMsg("evMsg", "載入失敗：" + (e?.message || e));
+    }
+  }
+
+  async function createEvent() {
+    if (!state.petId) { setMsg("evMsg", "❌ 請先選擇寵物"); return; }
+
+    const type = (document.getElementById("evType").value || "").trim();
+    const happened_at = (document.getElementById("evAt").value || "").trim() || nowIsoTaipei();
+    const title = (document.getElementById("evTitle").value || "").trim();
+    const valueRaw = (document.getElementById("evValue").value || "").trim();
+    const quick = (document.getElementById("evQuickNote").value || "").trim();
+    const note = (document.getElementById("evNote").value || "").trim();
+
+    const payload = {
+      type,
+      happened_at,
+      title: title || null,
+      note: (quick || note) ? [quick, note].filter(Boolean).join("\n") : null,
+      value: valueRaw ? valueRaw : null,
+    };
+
+    setMsg("evMsg", "新增中…");
+    try {
+      await api(`/pets/${state.petId}/events`, { method: "POST", body: JSON.stringify(payload) });
+      setMsg("evMsg", "✅ 新增成功");
+      document.getElementById("evTitle").value = "";
+      document.getElementById("evValue").value = "";
+      document.getElementById("evQuickNote").value = "";
+      document.getElementById("evNote").value = "";
+      setNow();
+      await loadEvents();
+    } catch (e) {
+      setMsg("evMsg", "新增失敗：" + (e?.message || e));
+    }
+  }
+
+  async function deleteEvent(id) {
+    if (!confirm("確定要刪除這筆事件？")) return;
+    setMsg("evMsg", "刪除中…");
+    try {
+      await api(`/events/${id}`, { method: "DELETE" });
+      setMsg("evMsg", "✅ 已刪除");
+      await loadEvents();
+    } catch (e) {
+      setMsg("evMsg", "刪除失敗：" + (e?.message || e));
+    }
+  }
+
+  (function init() {
+    loadClientId();
+    setNow();
+    loadPets();
+  })();
+</script>
+</body>
+</html>

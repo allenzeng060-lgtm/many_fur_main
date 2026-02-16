@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: petlog_pg
+    environment:
+      POSTGRES_USER: petlog
+      POSTGRES_PASSWORD: petlogpass
+      POSTGRES_DB: petlogdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
