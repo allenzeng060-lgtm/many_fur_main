@@ -1,0 +1,56 @@
+# ===== OS / Editor =====
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ===== Env / Secrets =====
+.env
+.env.*
+*.key
+*.pem
+
+# ===== Logs =====
+*.log
+logs/
+
+# ===== Node / Frontend =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+build/
+.next/
+out/
+coverage/
+.expo/
+.expo-shared/
+.cache/
+.parcel-cache/
+
+# ===== Python / Backend =====
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+pip-wheel-metadata/
+.pytest_cache/
+.mypy_cache/
+
+# ===== Common runtime / local DB =====
+*.sqlite
+*.db
+*.pid
+
+# ===== Uploads / media (看你需求) =====
+uploads/
+tmp/
+
+# ===== Secrets / credentials =====
+*service-account*.json
+credentials*.json
+token*.json
