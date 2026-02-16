@@ -421,7 +421,7 @@ async def analyze_image_only(
             crop_img = img
             label = "unknown"
             
-        ai_result = ml_utils.analyze_with_glm(crop_img)
+        ai_result = ml_utils.analyze_with_openai(crop_img)
         
         if label != "unknown" and (not ai_result.get("species") or ai_result.get("species") == "other"):
             ai_result["species"] = label

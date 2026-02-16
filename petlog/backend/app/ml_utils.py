@@ -15,9 +15,9 @@ from difflib import SequenceMatcher
 load_dotenv()
 
 # 配置
-API_KEY = os.getenv("GEMINI_API_KEY")
-if not API_KEY:
-    print("⚠️ Warning: GEMINI_API_KEY not found in environment variables.")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    print("⚠️ Warning: OPENAI_API_KEY not found in environment variables.")
 
 # 確保路徑正確：優先使用環境變數 `YOLO_WEIGHTS`，否則使用 repo 中的 yolov8n.pt
 from pathlib import Path
@@ -25,8 +25,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 YOLO_WEIGHTS = os.getenv("YOLO_WEIGHTS") or str(PROJECT_ROOT / "yolov8n.pt")
 
 # 初始化
-_yolo_model = None
-_zhipu_client = None
+_openai_client = None
 
 def get_yolo_model():
     global _yolo_model
@@ -41,24 +40,23 @@ def get_yolo_model():
             _yolo_model = YOLO("yolov8n.pt") 
     return _yolo_model
 
-def get_zhipu_client():
-    global _zhipu_client
-    # 檢查 API key 前先不要匯入 zhipuai，避免在缺少套件或無 key 時拋錯
-    api_key = os.getenv("ZHIPUAI_API_KEY")
+def get_openai_client():
+    global _openai_client
+    api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
-        print("⚠️ Warning: ZHIPUAI_API_KEY not found in environment variables.")
+        print("⚠️ Warning: OPENAI_API_KEY not found in environment variables.")
         return None
 
     try:
-        from zhipuai import ZhipuAI  # Lazy import after checking API key
+        from openai import OpenAI
     except Exception as e:
-        print(f"Failed to import zhipuai: {e}")
+        print(f"Failed to import openai: {e}")
         return None
 
-    if _zhipu_client is None:
-        _zhipu_client = ZhipuAI(api_key=api_key)
+    if _openai_client is None:
+        _openai_client = OpenAI(api_key=api_key)
 
-    return _zhipu_client
+    return _openai_client
 
 
 def get_best_crop(original_img):
@@ -113,16 +111,16 @@ def get_best_crop(original_img):
     return None, None
 
 
-def analyze_with_glm(crop_img_cv2):
+def analyze_with_openai(crop_img_cv2):
     """
-    將 OpenCV 圖片轉給 GLM-4V 進行特徵分析
+    將 OpenCV 圖片轉給 OpenAI GPT-4V 進行特徵分析
     """
-    client = get_zhipu_client()
+    client = get_openai_client()
     if not client:
          return {
             "species": "unknown",
             "features": "API Key Missing",
-            "description": "Please set ZHIPUAI_API_KEY in .env"
+            "description": "Please set OPENAI_API_KEY in .env"
         }
     
     # 1. OpenCV (BGR) -> PIL (RGB) -> Base64
@@ -158,10 +156,10 @@ def analyze_with_glm(crop_img_cv2):
     請只回傳 JSON，不要有其他說明文字。
     """
 
-    # 3. 呼叫 API (GLM-4.6V-Flash)
+    # 3. 呼叫 OpenAI API (GPT-4V)
     try:
         response = client.chat.completions.create(
-            model="glm-4.6v-flash", # Corrected to 4.6v-flash 
+            model="gpt-4o-mini",  # 使用便宜的 vision 模型
             messages=[
                 {
                     "role": "user",
@@ -178,7 +176,8 @@ def analyze_with_glm(crop_img_cv2):
                         }
                     ]
                 }
-            ]
+            ],
+            max_tokens=1000
         )
         
         # 4. 清洗 JSON
@@ -198,27 +197,7 @@ def analyze_with_glm(crop_img_cv2):
                 "description": text[:100]
             }
         
-        # 5. Convert to Traditional Chinese using OpenCC
-        try:
-            from opencc import OpenCC
-            cc = OpenCC('s2t') # Simplified to Traditional
-            
-            def convert_recursive(item):
-                if isinstance(item, str):
-                    return cc.convert(item)
-                elif isinstance(item, list):
-                    return [convert_recursive(i) for i in item]
-                elif isinstance(item, dict):
-                    return {k: convert_recursive(v) for k, v in item.items()}
-                return item
-                
-            data = convert_recursive(data)
-        except ImportError:
-            print("OpenCC not found, skipping conversion")
-        except Exception as e:
-            print(f"OpenCC conversion error: {e}")
-        
-        # Map to DB model fields
+        # 5. Map to DB model fields
         features_list = data.get("distinctive_features", [])
         if isinstance(features_list, list):
             features_str = ", ".join([str(f) for f in features_list])
@@ -228,15 +207,15 @@ def analyze_with_glm(crop_img_cv2):
         return {
             "species": data.get("species", "unknown"),
             "breed": data.get("breed"),
-            "size": data.get("size"), # Captured Size
+            "size": data.get("size"),
             "color": data.get("color"),
             "sex": data.get("sex"),
-            "features": features_str,  # Mapped from distinctive_features
-            "description": data.get("others") # Mapped from others
+            "features": features_str,
+            "description": data.get("others")
         }
 
     except Exception as e:
-        print(f"GLM-4V Error: {e}")
+        print(f"OpenAI Error: {e}")
         import traceback
         traceback.print_exc()
         return {
