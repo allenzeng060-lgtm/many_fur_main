@@ -1,3 +1,4 @@
 // Configuration for the app
-// Using LAN IP for iOS Simulator connectivity
-export const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://127.0.0.1:8000";
+// IMPORTANT: Change this to your backend server IP address
+// For local testing: use your computer's LAN IP (e.g., 192.168.1.160)
+export const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.160:8000";
